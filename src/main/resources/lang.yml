@@ -21,3 +21,7 @@ command:
   not-active: "§cNo hay evento ni cuenta regresiva activa."
   stopped: "§aKOTH detenido."
   reloaded: "§aConfiguración recargada."
+  set-usage: "§cUso: /koth set pos1|pos2 (desde el juego)."
+  unknown: "§cSubcomando desconocido. Usa /koth."
+  status: "§eKOTH: "
+  remaining: "§eTiempo restante: §f"
