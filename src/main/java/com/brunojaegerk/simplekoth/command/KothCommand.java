@@ -85,6 +85,7 @@ public final class KothCommand extends Command {
                 if (koth.isRunning()) koth.stop(false);
                 plugin.reloadConfig();
                 regions.load();
+                koth.reloadSettings();
                 sender.sendMessage("§aConfiguración recargada.");
                 return true;
             }
