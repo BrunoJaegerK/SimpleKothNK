@@ -25,3 +25,26 @@ command:
   unknown: "§cSubcomando desconocido. Usa /koth."
   status: "§eKOTH: "
   remaining: "§eTiempo restante: §f"
+
+bossbar:
+  waiting: "§eEsperando jugador"
+  capturing: "§a¡KOTH en curso!"
+  contested: "§c¡KOTH disputado!"
+  time-left: " §8| §6Tiempo restante: §e"
+
+help:
+  pos1: "§e/koth set pos1 §7- Selecciona la primera esquina."
+  pos2: "§e/koth set pos2 §7- Selecciona la segunda esquina."
+  start: "§e/koth start §7- Programa el inicio del evento."
+  stop: "§e/koth stop §7- Detiene el evento."
+  status: "§e/koth status §7- Muestra el estado."
+  reload: "§e/koth reload §7- Recarga la configuración."
+
+status:
+  running: "§aActivo"
+  starting: "§eIniciando en {seconds}s"
+  stopped: "§cInactivo"
+  none: "Ninguno"
+
+command:
+  capturer: "§eCapturador: §f"
