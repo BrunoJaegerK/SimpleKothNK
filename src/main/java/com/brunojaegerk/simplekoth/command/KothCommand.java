@@ -24,13 +24,13 @@ public final class KothCommand extends Command {
     @Override
     public boolean execute(CommandSender sender, String label, String[] args) {
         if (!sender.hasPermission("simplekoth.admin")) {
-            sender.sendMessage("§cNo tienes permiso.");
+            sender.sendMessage(plugin.getLang().getString("command.no-permission", "§cNo tienes permiso."));
             return true;
         }
         if (args.length == 0) {
             sender.sendMessage("§e/koth set pos1 §7- Selecciona la primera esquina.");
             sender.sendMessage("§e/koth set pos2 §7- Selecciona la segunda esquina.");
-            sender.sendMessage("§e/koth start §7- Inicia el evento.");
+            sender.sendMessage("§e/koth start §7- Programa el inicio del evento.");
             sender.sendMessage("§e/koth stop §7- Detiene el evento.");
             sender.sendMessage("§e/koth status §7- Muestra el estado.");
             sender.sendMessage("§e/koth reload §7- Recarga la configuración.");
@@ -51,42 +51,51 @@ public final class KothCommand extends Command {
                 }
                 regions.setPosition(player, position);
                 sender.sendMessage(plugin.getConfig().getString(
-                        position == 1 ? "messages.pos1" : "messages.pos2",
+                        position == 1 ? "region.pos1-set" : "region.pos2-set",
                         "§aPosición establecida."));
                 return true;
             }
             case "start" -> {
-                if (koth.isRunning()) {
-                    sender.sendMessage(plugin.getConfig().getString("messages.already-running", "§cYa está activo."));
+                if (koth.isRunning() || koth.isStarting()) {
+                    sender.sendMessage(plugin.getLang().getString("command.already-active",
+                            "§cEl KOTH ya está activo o tiene una cuenta regresiva."));
                 } else if (!regions.isComplete()) {
-                    sender.sendMessage(plugin.getConfig().getString("messages.no-region", "§cConfigura la región primero."));
-                } else {
-                    koth.start();
-                    sender.sendMessage(plugin.getConfig().getString("messages.started", "§aKOTH iniciado."));
+                    sender.sendMessage(plugin.getLang().getString("command.no-region",
+                            "§cConfigura la región primero."));
+                } else if (koth.start()) {
+                    sender.sendMessage(plugin.getLang().getString("command.countdown-queued",
+                            "§aCuenta regresiva del KOTH programada."));
                 }
                 return true;
             }
             case "stop" -> {
-                if (!koth.isRunning()) {
-                    sender.sendMessage(plugin.getConfig().getString("messages.not-running", "§cNo hay evento activo."));
+                if (!koth.isRunning() && !koth.isStarting()) {
+                    sender.sendMessage(plugin.getLang().getString("command.not-active",
+                            "§cNo hay evento ni cuenta regresiva activa."));
                 } else {
                     koth.stop(true);
-                    sender.sendMessage(plugin.getConfig().getString("messages.stopped", "§aKOTH detenido."));
+                    sender.sendMessage(plugin.getLang().getString("command.stopped",
+                            "§aKOTH detenido."));
                 }
                 return true;
             }
             case "status" -> {
-                sender.sendMessage("§eKOTH: " + (koth.isRunning() ? "§aActivo" : "§cInactivo"));
-                sender.sendMessage("§eTiempo restante: §f" + koth.getRemainingFormatted());
+                String state = koth.isRunning() ? "§aActivo"
+                        : koth.isStarting() ? "§eIniciando en " + koth.getCountdownRemaining() + "s"
+                        : "§cInactivo";
+                sender.sendMessage("§eKOTH: " + state);
+                if (koth.isRunning()) {
+                    sender.sendMessage("§eTiempo restante: §f" + koth.getRemainingFormatted());
+                }
                 sender.sendMessage("§eCapturador: §f" + (koth.getCapturerName().isEmpty() ? "Ninguno" : koth.getCapturerName()));
                 return true;
             }
             case "reload" -> {
-                if (koth.isRunning()) koth.stop(false);
+                if (koth.isRunning() || koth.isStarting()) koth.stop(false);
                 plugin.reloadConfig();
                 regions.load();
                 koth.reloadSettings();
-                sender.sendMessage("§aConfiguración recargada.");
+                sender.sendMessage(plugin.getLang().getString("command.reloaded", "§aConfiguración recargada."));
                 return true;
             }
             default -> {
