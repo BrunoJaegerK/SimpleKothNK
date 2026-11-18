@@ -240,9 +240,12 @@ public final class KothManager {
 
     private void updateBossBars(int playersInside) {
         String status = playersInside == 0
-                ? "§eEsperando jugador"
-                : playersInside > 1 ? "§c¡KOTH disputado!" : "§a¡KOTH en curso!";
-        String title = status + " §8| §6Tiempo restante: §e" + formatTime(remainingSeconds);
+                ? message("bossbar.waiting", "§eEsperando jugador")
+                : playersInside > 1
+                ? message("bossbar.contested", "§c¡KOTH disputado!")
+                : message("bossbar.capturing", "§a¡KOTH en curso!");
+        String title = status + message("bossbar.time-left", " §8| §6Tiempo restante: §e")
+                + formatTime(remainingSeconds);
         float percentage = Math.max(0, Math.min(100,
                 (float) remainingSeconds / Math.max(1, captureTime) * 100));
 
