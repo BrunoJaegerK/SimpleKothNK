@@ -93,6 +93,7 @@ public final class KothCommand extends Command {
             case "reload" -> {
                 if (koth.isRunning() || koth.isStarting()) koth.stop(false);
                 plugin.reloadConfig();
+                plugin.reloadLang();
                 regions.load();
                 koth.reloadSettings();
                 sender.sendMessage(plugin.getLang().getString("command.reloaded", "§aConfiguración recargada."));
