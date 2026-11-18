@@ -16,6 +16,12 @@ public final class Region {
     }
 
     public String getWorld() { return world; }
+    public int getMinX() { return minX; }
+    public int getMinY() { return minY; }
+    public int getMinZ() { return minZ; }
+    public int getMaxX() { return maxX; }
+    public int getMaxY() { return maxY; }
+    public int getMaxZ() { return maxZ; }
 
     public boolean contains(String playerWorld, int x, int y, int z) {
         return world.equalsIgnoreCase(playerWorld)
