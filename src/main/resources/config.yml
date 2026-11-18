@@ -1,0 +1,34 @@
+# Tiempo que un jugador debe controlar la zona sin interrupciones (segundos).
+capture-time-seconds: 180
+
+# Mundo donde se encuentra la región. Se configura automáticamente con /koth set.
+region:
+  world: ""
+  pos1:
+    x: 0
+    y: 0
+    z: 0
+  pos2:
+    x: 0
+    y: 0
+    z: 0
+
+messages:
+  prefix: "§6[KOTH] §r"
+  start: "§6¡El KOTH ha comenzado! §eEntra a la zona y mantenla para ganar."
+  stop: "§cEl KOTH ha terminado."
+  capture-start: "§e{player} §7está intentando capturar el KOTH."
+  contested: "§c¡KOTH disputado! §7Hay más de un jugador en la zona."
+  winner: "§a¡{player} ha conquistado el KOTH!"
+  no-region: "§cPrimero debes seleccionar la región con /koth set pos1 y /koth set pos2."
+  invalid-world: "§cLas dos posiciones deben estar en el mismo mundo."
+  pos1: "§aPosición 1 establecida."
+  pos2: "§aPosición 2 establecida."
+  already-running: "§cEl KOTH ya está activo."
+  not-running: "§cNo hay un KOTH activo."
+  started: "§aKOTH iniciado."
+  stopped: "§aKOTH detenido."
+
+# Se ejecutan desde consola cuando alguien gana. Usa {player} como placeholder.
+winner-commands:
+  - "say {player} ha ganado el KOTH"

@@ -1,0 +1,16 @@
+name: SimpleKothNK
+main: com.brunojaegerk.simplekoth.SimpleKothNK
+version: "1.0.0"
+api: ["1.0.0"]
+author: BrunoJaegerK
+description: KOTH individual por regiones para NukkitPetteriM1Edition
+softdepend: ["PlaceholderAPI"]
+commands:
+  koth:
+    description: Administra el evento King of the Hill
+    usage: "/koth <set|start|stop|status|reload>"
+    permission: simplekoth.admin
+permissions:
+  simplekoth.admin:
+    description: Permite configurar y controlar el KOTH
+    default: op
