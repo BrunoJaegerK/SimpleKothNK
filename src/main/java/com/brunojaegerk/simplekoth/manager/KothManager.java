@@ -32,6 +32,7 @@ public final class KothManager {
         running = true;
         capturer = null;
         capturedSeconds = 0;
+        contested = false;
         broadcast(message("messages.start", "§6¡El KOTH ha comenzado!"));
         updateBossBars();
     }
@@ -41,6 +42,7 @@ public final class KothManager {
         running = false;
         capturer = null;
         capturedSeconds = 0;
+        contested = false;
         removeAllBossBars();
         if (announce) broadcast(message("messages.stop", "§cEl KOTH ha terminado."));
     }
@@ -150,7 +152,7 @@ public final class KothManager {
         } else if (current != null) {
             title = "§6KOTH §7| §e" + current.getName() + " §7| §f" + formatTime(getRemainingSeconds());
         } else {
-            title = "§6KOTH §7| §fEsperando jugador";
+            title = "§6KOTH §7| §fEsperando jugador §7| §e" + formatTime(getRemainingSeconds());
         }
         int percentage = Math.max(0, Math.min(100,
                 (int) Math.round((double) capturedSeconds / captureTime * 100)));
@@ -206,7 +208,7 @@ public final class KothManager {
     }
 
     public boolean isRunning() { return running; }
-    public int getRemainingSeconds() { return running ? Math.max(0, captureTime - capturedSeconds) : captureTime; }
+    public int getRemainingSeconds() { return running ? Math.max(0, captureTime - capturedSeconds) : 0; }
     public String getRemainingFormatted() { return formatTime(getRemainingSeconds()); }
     public String getStatus() { return !running ? "stopped" : contested ? "contested" : capturer == null ? "waiting" : "capturing"; }
 
