@@ -1,6 +1,23 @@
 # Duración total del evento KOTH en segundos. El temporizador es global y no se pausa.
 capture-time-seconds: 180
 
+# Cuenta regresiva previa al evento.
+# Se fuerza un mínimo de 30 segundos aunque se configure un valor menor.
+countdown:
+  seconds: 30
+  # Segundos restantes en los que se enviará un anuncio al chat.
+  announcements:
+    - 30
+    - 20
+
+# Inicio automático. El próximo inicio se guarda como fecha Unix en milisegundos
+# dentro de auto-start.next-start-at; no edites ese valor manualmente.
+auto-start:
+  enabled: true
+  # 86400 = 24 horas; 259200 = 3 días.
+  interval-seconds: 86400
+  next-start-at: 0
+
 # Mundo donde se encuentra la región. Se configura automáticamente con /koth set.
 region:
   pos1-world: ""
@@ -13,20 +30,6 @@ region:
     x: 0
     y: 0
     z: 0
-
-messages:
-  prefix: "§6[KOTH] §r"
-  start: "§6¡El KOTH ha comenzado! §eEntra a la zona y mantenla para ganar."
-  stop: "§cEl KOTH ha terminado."
-  winner: "§a¡{player} ha conquistado el KOTH!"
-  no-region: "§cPrimero debes seleccionar la región con /koth set pos1 y /koth set pos2."
-  invalid-world: "§cLas dos posiciones deben estar en el mismo mundo."
-  pos1: "§aPosición 1 establecida."
-  pos2: "§aPosición 2 establecida."
-  already-running: "§cEl KOTH ya está activo."
-  not-running: "§cNo hay un KOTH activo."
-  started: "§aKOTH iniciado."
-  stopped: "§aKOTH detenido."
 
 # Se ejecutan desde consola cuando alguien gana. Usa {player} como placeholder.
 winner-commands:
