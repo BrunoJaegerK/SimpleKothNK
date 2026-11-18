@@ -40,13 +40,13 @@ public final class KothCommand extends Command {
         switch (args[0].toLowerCase()) {
             case "set" -> {
                 if (!(sender instanceof Player player) || args.length < 2) {
-                    sender.sendMessage("§cUso: /koth set pos1|pos2 (desde el juego).");
+                    sender.sendMessage(plugin.getLang().getString("command.set-usage", "§cUso: /koth set pos1|pos2 (desde el juego)."));
                     return true;
                 }
                 int position = args[1].equalsIgnoreCase("pos1") ? 1
                         : args[1].equalsIgnoreCase("pos2") ? 2 : 0;
                 if (position == 0) {
-                    sender.sendMessage("§cUso: /koth set pos1|pos2");
+                    sender.sendMessage(plugin.getLang().getString("command.set-usage", "§cUso: /koth set pos1|pos2"));
                     return true;
                 }
                 regions.setPosition(player, position);
@@ -83,9 +83,9 @@ public final class KothCommand extends Command {
                 String state = koth.isRunning() ? "§aActivo"
                         : koth.isStarting() ? "§eIniciando en " + koth.getCountdownRemaining() + "s"
                         : "§cInactivo";
-                sender.sendMessage("§eKOTH: " + state);
+                sender.sendMessage(plugin.getLang().getString("command.status", "§eKOTH: ") + state);
                 if (koth.isRunning()) {
-                    sender.sendMessage("§eTiempo restante: §f" + koth.getRemainingFormatted());
+                    sender.sendMessage(plugin.getLang().getString("command.remaining", "§eTiempo restante: §f") + koth.getRemainingFormatted());
                 }
                 sender.sendMessage("§eCapturador: §f" + (koth.getCapturerName().isEmpty() ? "Ninguno" : koth.getCapturerName()));
                 return true;
@@ -100,7 +100,7 @@ public final class KothCommand extends Command {
                 return true;
             }
             default -> {
-                sender.sendMessage("§cSubcomando desconocido. Usa /koth.");
+                sender.sendMessage(plugin.getLang().getString("command.unknown", "§cSubcomando desconocido. Usa /koth."));
                 return true;
             }
         }
