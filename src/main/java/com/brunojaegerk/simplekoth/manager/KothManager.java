@@ -2,7 +2,6 @@ package com.brunojaegerk.simplekoth.manager;
 
 import cn.nukkit.Player;
 import cn.nukkit.Server;
-import cn.nukkit.utils.BossBarColor;
 import com.brunojaegerk.simplekoth.SimpleKothNK;
 import com.brunojaegerk.simplekoth.model.Region;
 
@@ -19,7 +18,8 @@ public final class KothManager {
     private boolean running;
     private UUID capturer;
     private int capturedSeconds;
-    private final int captureTime;
+    private int captureTime;
+    private boolean contested;
 
     public KothManager(SimpleKothNK plugin, RegionManager regions) {
         this.plugin = plugin;
@@ -74,10 +74,12 @@ public final class KothManager {
 
         if (inside.size() > 1) {
             // La disputa pausa el contador. No se asigna un capturador nuevo.
+            contested = true;
             updateBossBars();
             return;
         }
 
+        contested = false;
         if (inside.isEmpty()) {
             capturer = null;
             capturedSeconds = 0;
@@ -107,8 +109,7 @@ public final class KothManager {
 
     private Player findCapturer() {
         if (capturer == null) return null;
-        Player player = Server.getInstance().getPlayer(capturer);
-        return player != null && player.isOnline() ? player : null;
+        return Server.getInstance().getPlayer(capturer).filter(Player::isOnline).orElse(null);
     }
 
     private void win(Player winner) {
@@ -148,7 +149,7 @@ public final class KothManager {
             title = "§6KOTH §7| §fEsperando jugador";
         }
         int percentage = Math.max(0, Math.min(100,
-                (int) Math.round((double) getRemainingSeconds() / captureTime * 100)));
+                (int) Math.round((double) capturedSeconds / captureTime * 100)));
 
         for (Player player : Server.getInstance().getOnlinePlayers().values()) {
             if (!player.isOnline()) continue;
@@ -203,7 +204,14 @@ public final class KothManager {
     public boolean isRunning() { return running; }
     public int getRemainingSeconds() { return running ? Math.max(0, captureTime - capturedSeconds) : captureTime; }
     public String getRemainingFormatted() { return formatTime(getRemainingSeconds()); }
-    public String getStatus() { return !running ? "stopped" : capturer == null ? "waiting" : "capturing"; }
+    public String getStatus() { return !running ? "stopped" : contested ? "contested" : capturer == null ? "waiting" : "capturing"; }
+
+    public void reloadSettings() {
+        captureTime = Math.max(1, plugin.getConfig().getInt("capture-time-seconds", 180));
+        capturedSeconds = 0;
+        capturer = null;
+        contested = false;
+    }
     public String getCapturerName() {
         Player player = findCapturer();
         return player == null ? "" : player.getName();
