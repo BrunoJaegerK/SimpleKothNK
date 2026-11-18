@@ -22,9 +22,10 @@ Plugin KOTH individual, ligero y configurable para **NukkitPetteriM1Edition (PM1
 
 - Región cúbica definida por dos esquinas, incluso en un área pequeña de un mundo existente.
 - Evento individual: solo un jugador puede capturar.
-- Si hay dos o más jugadores dentro de la zona, la captura queda disputada y el contador se pausa.
+- Si hay dos o más jugadores dentro de la zona, la captura queda disputada y el contador se pausa; aparecen partículas de enfado sobre los participantes.
 - Si el capturador sale de la región, su progreso se reinicia.
-- BossBar nativa de PM1E con tiempo restante.
+- BossBar nativa de PM1E persistente, con tiempo restante y progreso; sigue la posición del jugador para evitar que desaparezca.
+- Partículas verdes de brillo alrededor de la zona durante la captura.
 - Anuncio de inicio y victoria en el chat.
 - Comandos configurables al ganar.
 - Placeholders de PlaceholderAPI-nukkit.
@@ -59,9 +60,10 @@ La región exige que ambas posiciones estén en el mismo mundo. No se modifica n
 
 1. Con el evento activo, un jugador solo dentro de la región empieza a capturar.
 2. Si entra otro jugador, el contador se pausa mientras haya más de una persona en la región.
-3. Cuando vuelve a quedar un solo jugador, el capturador que siga dentro continúa con su progreso.
-4. Si el capturador sale o se desconecta, su progreso se reinicia. Si queda otro jugador solo dentro, empieza desde cero.
-5. Al completar el tiempo, se anuncia el ganador y se ejecutan los comandos configurados.
+3. Mientras haya disputa se muestran partículas de enfado; no se envían mensajes de captura o disputa al chat.
+4. Cuando vuelve a quedar un solo jugador, el capturador que siga dentro continúa con su progreso.
+5. Si el capturador sale o se desconecta, su progreso se reinicia. Si queda otro jugador solo dentro, empieza desde cero.
+6. Al completar el tiempo, se anuncia el ganador y se ejecutan los comandos configurados.
 
 Jugadores muertos no cuentan como participantes dentro de la zona.
 
@@ -73,7 +75,7 @@ Se integra con la API de [Creeperface01/PlaceholderAPI-nukkit](https://github.co
 |---|---|
 | `%koth_time%` | Tiempo restante `MM:SS` |
 | `%koth_time_seconds%` | Segundos restantes |
-| `%koth_status%` | `stopped`, `waiting` o `capturing` |
+| `%koth_status%` | `stopped`, `waiting`, `capturing` o `contested` |
 | `%koth_capturer%` | Nombre del capturador o vacío |
 
 La integración se activa si PlaceholderAPI está instalado; no es una dependencia obligatoria.
