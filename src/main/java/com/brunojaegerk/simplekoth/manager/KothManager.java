@@ -73,6 +73,10 @@ public final class KothManager {
         }
 
         if (inside.size() > 1) {
+            // Anuncia solo al entrar en disputa para no inundar el chat.
+            if (!contested) {
+                broadcast(message("messages.contested", "§c¡KOTH disputado!"));
+            }
             // La disputa pausa el contador. No se asigna un capturador nuevo.
             contested = true;
             updateBossBars();
