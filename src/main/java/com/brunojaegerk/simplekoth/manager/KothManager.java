@@ -215,7 +215,7 @@ public final class KothManager {
         remainingSeconds = 0;
         removeAllBossBars();
 
-        broadcast(message("messages.winner", "§a¡{player} ha conquistado el KOTH!")
+        broadcast(message("event.winner", "§a¡{player} ha conquistado el KOTH!")
                 .replace("{player}", winnerName));
 
         playVictoryEffects(region);
