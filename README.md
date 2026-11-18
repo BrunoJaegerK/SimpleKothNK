@@ -7,7 +7,7 @@
   <img src="https://img.shields.io/badge/Build-Maven-C71A36?style=for-the-badge&logo=apachemaven&logoColor=white" alt="Maven">
 </p>
 
-<p align="center"><b>Plugin KOTH individual y ligero para NukkitPetteriM1Edition, con regiones configurables, captura disputada, BossBar y recompensas por comandos.</b></p>
+<p align="center"><b>Plugin KOTH por temporizador global para NukkitPetteriM1Edition, con regiones configurables, BossBar regresiva, efectos de zona y recompensas por comandos.</b></p>
 
 ---
 
@@ -76,7 +76,7 @@ Se integra con la API de [Creeperface01/PlaceholderAPI-nukkit](https://github.co
 | `%koth_time%` | Tiempo restante `MM:SS` |
 | `%koth_time_seconds%` | Segundos restantes |
 | `%koth_status%` | `stopped`, `waiting`, `capturing` o `contested` |
-| `%koth_capturer%` | Nombre del capturador o vacío |
+| `%koth_capturer%` | Nombre del único jugador que esté dentro; vacío si hay cero o varios |
 
 La integración se activa si PlaceholderAPI está instalado; no es una dependencia obligatoria.
 
