@@ -70,4 +70,8 @@ public final class SimpleKothNK extends PluginBase {
     public Config getLang() {
         return lang;
     }
+
+    public void reloadLang() {
+        this.lang = new Config(new File(getDataFolder(), "lang.yml"), Config.YAML);
+    }
 }
