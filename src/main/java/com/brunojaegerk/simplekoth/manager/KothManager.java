@@ -31,6 +31,9 @@ public final class KothManager {
     private boolean running;
     private int captureTime;
     private int remainingSeconds;
+    private boolean countdownActive;
+    private int countdownRemaining;
+    private long nextAutoStartAt;
 
     public KothManager(SimpleKothNK plugin, RegionManager regions) {
         this.plugin = plugin;
@@ -39,31 +42,132 @@ public final class KothManager {
         this.remainingSeconds = captureTime;
     }
 
-    public void start() {
+    /**
+     * Solicita el inicio del evento. Nunca inicia inmediatamente: respeta el
+     * mínimo de 30 segundos configurado para que los jugadores puedan llegar.
+     */
+    public boolean start() {
+        return beginCountdown();
+    }
+
+    public boolean beginCountdown() {
+        if (running || countdownActive || !regions.isComplete()) return false;
+
+        countdownRemaining = Math.max(30,
+                plugin.getConfig().getInt("countdown.seconds", 30));
+        countdownActive = true;
+        announceCountdown(countdownRemaining);
+        return true;
+    }
+
+    private void startNow() {
         if (running || !regions.isComplete()) return;
 
         running = true;
         captureTime = Math.max(1, plugin.getConfig().getInt("capture-time-seconds", 180));
         remainingSeconds = captureTime;
 
-        broadcast(message("messages.start", "§6¡El KOTH ha comenzado!"));
+        broadcast(message("event.started",
+                "§a¡Empezó un KOTH! Usa /warp koth"));
         updateBossBars(getPlayersInside(regions.getRegion()).size());
     }
 
+    private void announceCountdown(int seconds) {
+        List<?> announcements = plugin.getConfig().getList(
+                "countdown.announcements", Arrays.asList(30, 20));
+        boolean shouldAnnounce = false;
+        for (Object value : announcements) {
+            if (value instanceof Number number && number.intValue() == seconds) {
+                shouldAnnounce = true;
+                break;
+            }
+        }
+        if (!shouldAnnounce) return;
+
+        broadcast(message("countdown.announcement",
+                "§eUn KOTH empezará en {seconds} segundos.")
+                .replace("{seconds}", String.valueOf(seconds)));
+    }
+
+    /** Inicializa o recupera el siguiente inicio automático persistido. */
+    public void initializeAutoSchedule() {
+        if (!plugin.getConfig().getBoolean("auto-start.enabled", true)) return;
+
+        long interval = getAutoIntervalMillis();
+        nextAutoStartAt = plugin.getConfig().getLong("auto-start.next-start-at", 0L);
+        if (nextAutoStartAt <= 0L) {
+            nextAutoStartAt = System.currentTimeMillis() + interval;
+            saveAutoSchedule();
+        }
+    }
+
+    private long getAutoIntervalMillis() {
+        long seconds = Math.max(60L,
+                plugin.getConfig().getLong("auto-start.interval-seconds", 86400L));
+        return seconds * 1000L;
+    }
+
+    private void saveAutoSchedule() {
+        plugin.getConfig().set("auto-start.next-start-at", nextAutoStartAt);
+        plugin.saveConfig();
+    }
+
+    private void tickCountdown() {
+        if (!countdownActive) return;
+        if (countdownRemaining > 0) countdownRemaining--;
+        if (countdownRemaining > 0) {
+            announceCountdown(countdownRemaining);
+            return;
+        }
+
+        countdownActive = false;
+        startNow();
+    }
+
+    private void tickAutoSchedule() {
+        if (!plugin.getConfig().getBoolean("auto-start.enabled", true)
+                || nextAutoStartAt <= 0L
+                || System.currentTimeMillis() < nextAutoStartAt
+                || running || countdownActive) {
+            return;
+        }
+
+        // El siguiente ciclo se calcula desde el disparo, no desde cada reinicio.
+        nextAutoStartAt = System.currentTimeMillis() + getAutoIntervalMillis();
+        saveAutoSchedule();
+
+        if (!regions.isComplete()) {
+            plugin.getLogger().warning("No se pudo iniciar el KOTH automático: configura la región.");
+            return;
+        }
+
+        if (!beginCountdown()) {
+            plugin.getLogger().warning("No se pudo programar el inicio automático del KOTH.");
+        }
+    }
+
     public void stop(boolean announce) {
-        if (!running) return;
+        boolean wasActive = running || countdownActive;
+        if (!wasActive) return;
 
         running = false;
+        countdownActive = false;
+        countdownRemaining = 0;
         remainingSeconds = captureTime;
         removeAllBossBars();
 
         if (announce) {
-            broadcast(message("messages.stop", "§cEl KOTH ha terminado."));
+            broadcast(message("event.stopped", "§cEl KOTH ha terminado."));
         }
     }
 
     /** Se ejecuta una vez por segundo: el tiempo avanza aunque la zona esté vacía o disputada. */
     public void tick() {
+        tickAutoSchedule();
+        if (countdownActive) {
+            tickCountdown();
+            return;
+        }
         if (!running) return;
 
         Region region = regions.getRegion();
@@ -285,15 +389,27 @@ public final class KothManager {
     }
 
     private String prefix() {
-        return plugin.getConfig().getString("messages.prefix", "§6[KOTH] §r");
+        return plugin.getLang().getString("prefix", "§6[KOTH] §r");
     }
 
     private String message(String path, String fallback) {
-        return plugin.getConfig().getString(path, fallback);
+        return plugin.getLang().getString(path, fallback);
     }
 
     public boolean isRunning() {
         return running;
+    }
+
+    public boolean isStarting() {
+        return countdownActive;
+    }
+
+    public int getCountdownRemaining() {
+        return countdownActive ? countdownRemaining : 0;
+    }
+
+    public long getNextAutoStartAt() {
+        return nextAutoStartAt;
     }
 
     public int getRemainingSeconds() {
@@ -315,6 +431,11 @@ public final class KothManager {
     public void reloadSettings() {
         captureTime = Math.max(1, plugin.getConfig().getInt("capture-time-seconds", 180));
         remainingSeconds = captureTime;
+        if (countdownActive) {
+            countdownRemaining = Math.max(30,
+                    plugin.getConfig().getInt("countdown.seconds", 30));
+        }
+        initializeAutoSchedule();
     }
 
     /** Conserva el placeholder anterior: devuelve el único jugador dentro, si lo hay. */
