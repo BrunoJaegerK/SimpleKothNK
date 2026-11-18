@@ -211,7 +211,10 @@ public final class KothManager {
     }
 
     private void addHappyParticle(Region region, double x, double y, double z) {
-        regionLevel(region).addParticle(new HappyVillagerParticle(new Vector3(x, y, z)));
+        cn.nukkit.level.Level level = regionLevel(region);
+        if (level != null) {
+            level.addParticle(new HappyVillagerParticle(new Vector3(x, y, z)));
+        }
     }
 
     /** Partículas de enfado sobre cada jugador cuando la zona está disputada. */
