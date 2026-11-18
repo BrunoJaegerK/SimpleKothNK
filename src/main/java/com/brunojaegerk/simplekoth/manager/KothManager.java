@@ -47,7 +47,7 @@ public final class KothManager {
         remainingSeconds = captureTime;
 
         broadcast(message("messages.start", "§6¡El KOTH ha comenzado!"));
-        updateBossBars();
+        updateBossBars(getPlayersInside(regions.getRegion()).size());
     }
 
     public void stop(boolean announce) {
@@ -81,7 +81,7 @@ public final class KothManager {
             remainingSeconds--;
         }
 
-        updateBossBars();
+        updateBossBars(inside.size());
 
         // Si el tiempo llega a cero sin participantes, se queda en cero.
         // El primer jugador (o uno elegido al azar si hay varios) que esté dentro gana.
@@ -124,31 +124,54 @@ public final class KothManager {
         }
     }
 
-    /** Crea y mantiene una BossBar para todos los jugadores conectados. */
+    /**
+     * Sincroniza la BossBar para cada jugador que ya terminó de entrar al mundo.
+     * PlayerJoinEvent puede ocurrir antes del spawn: por eso no se crea la barra
+     * hasta que player.spawned sea true. En cada tick se comprueba que siga registrada.
+     */
     private void updateBossBars() {
-        String title = BOSSBAR_TITLE + formatTime(remainingSeconds);
+        Region region = regions.getRegion();
+        updateBossBars(region == null ? 0 : getPlayersInside(region).size());
+    }
+
+    private void updateBossBars(int playersInside) {
+        String status = playersInside == 0
+                ? "§eEsperando jugador"
+                : playersInside > 1 ? "§c¡KOTH disputado!" : "§a¡KOTH en curso!";
+        String title = status + " §8| §6Tiempo restante: §e" + formatTime(remainingSeconds);
         float percentage = Math.max(0, Math.min(100,
                 (float) remainingSeconds / Math.max(1, captureTime) * 100));
 
         for (Player player : Server.getInstance().getOnlinePlayers().values()) {
-            if (!player.isOnline()) continue;
+            if (!player.isOnline() || !player.spawned) {
+                continue;
+            }
 
-            DummyBossBar bar = bossBars.get(player.getUniqueId());
-            if (bar == null || player.getDummyBossBar(bar.getBossBarId()) == null) {
+            UUID uuid = player.getUniqueId();
+            DummyBossBar bar = bossBars.get(uuid);
+
+            // La referencia guardada debe coincidir con la barra que el propio jugador conserva.
+            if (bar == null || player.getDummyBossBar(bar.getBossBarId()) != bar) {
+                if (bar != null) {
+                    player.removeBossBar(bar.getBossBarId());
+                }
+
                 bar = new DummyBossBar.Builder(player)
                         .text(title)
                         .length(percentage)
                         .build();
                 player.createBossBar(bar);
-                bossBars.put(player.getUniqueId(), bar);
+                bossBars.put(uuid, bar);
             } else {
                 bar.setText(title);
                 bar.setLength(percentage);
             }
 
-            // La entidad invisible de la BossBar debe mantenerse junto al jugador.
             bar.updateBossEntityPosition();
         }
+
+        // Limpia referencias de jugadores que ya no están conectados.
+        bossBars.keySet().removeIf(uuid -> Server.getInstance().getPlayer(uuid) == null);
     }
 
     /**
@@ -159,27 +182,50 @@ public final class KothManager {
         Level level = regionLevel(region);
         if (level == null) return;
 
-        double y = region.getMaxY() + 1.15;
+        double y = region.getMaxY() + 1.05;
         double minX = region.getMinX() + 0.5;
         double maxX = region.getMaxX() + 0.5;
         double minZ = region.getMinZ() + 0.5;
         double maxZ = region.getMaxZ() + 0.5;
-        double midX = (minX + maxX) / 2.0;
-        double midZ = (minZ + maxZ) / 2.0;
 
-        Vector3[] points = {
-                new Vector3(minX, y, minZ), new Vector3(minX, y, maxZ),
-                new Vector3(maxX, y, minZ), new Vector3(maxX, y, maxZ),
-                new Vector3(midX, y, minZ), new Vector3(midX, y, maxZ),
-                new Vector3(minX, y, midZ), new Vector3(maxX, y, midZ),
-                new Vector3(midX, y, midZ)
-        };
+        ThreadLocalRandom random = ThreadLocalRandom.current();
 
-        for (Vector3 point : points) {
+        // Una nube amplia de partículas cubre el área completa, no solo nueve puntos.
+        // En disputa se envían exclusivamente partículas de furia para que el cambio sea evidente.
+        int particleCount = contested ? 48 : 36;
+        for (int i = 0; i < particleCount; i++) {
+            double x = minX + (maxX <= minX ? 0 : random.nextDouble(maxX - minX));
+            double z = minZ + (maxZ <= minZ ? 0 : random.nextDouble(maxZ - minZ));
+            double particleY = y + random.nextDouble(0.0, 0.65);
+            Vector3 point = new Vector3(x, particleY, z);
+
             if (contested) {
                 level.addParticle(new AngryVillagerParticle(point));
             } else {
                 level.addParticle(new HappyVillagerParticle(point));
+            }
+        }
+
+        // Refuerza visualmente el límite de la zona con partículas adicionales.
+        int edgeSamples = 12;
+        for (int i = 0; i < edgeSamples; i++) {
+            double ratio = (double) i / (edgeSamples - 1);
+            double x = minX + (maxX - minX) * ratio;
+            double z = minZ + (maxZ - minZ) * ratio;
+
+            Vector3[] edgePoints = {
+                    new Vector3(x, y, minZ),
+                    new Vector3(x, y, maxZ),
+                    new Vector3(minX, y, z),
+                    new Vector3(maxX, y, z)
+            };
+
+            for (Vector3 point : edgePoints) {
+                if (contested) {
+                    level.addParticle(new AngryVillagerParticle(point));
+                } else {
+                    level.addParticle(new HappyVillagerParticle(point));
+                }
             }
         }
     }
@@ -214,7 +260,8 @@ public final class KothManager {
     }
 
     public void onJoin(Player player) {
-        if (running) updateBossBars();
+        // PlayerJoinEvent puede ejecutarse antes de que el cliente termine de cargar.
+        // tick() sincronizará la BossBar cuando player.spawned sea true.
     }
 
     public void onQuit(Player player) {
