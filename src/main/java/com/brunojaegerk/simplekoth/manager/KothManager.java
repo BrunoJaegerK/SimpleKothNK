@@ -2,43 +2,49 @@ package com.brunojaegerk.simplekoth.manager;
 
 import cn.nukkit.Player;
 import cn.nukkit.Server;
+import cn.nukkit.level.Level;
+import cn.nukkit.level.Sound;
 import cn.nukkit.level.particle.AngryVillagerParticle;
+import cn.nukkit.level.particle.ExplodeParticle;
+import cn.nukkit.level.particle.FlameParticle;
 import cn.nukkit.level.particle.HappyVillagerParticle;
+import cn.nukkit.level.particle.HugeExplodeSeedParticle;
 import cn.nukkit.math.Vector3;
 import cn.nukkit.utils.DummyBossBar;
 import com.brunojaegerk.simplekoth.SimpleKothNK;
 import com.brunojaegerk.simplekoth.model.Region;
 
 import java.util.*;
+import java.util.concurrent.ThreadLocalRandom;
 
 /**
- * Controla la captura individual, la bossbar y los efectos visuales del KOTH.
- * Toda esta clase se ejecuta desde el hilo principal del servidor.
+ * Administra el temporizador global del KOTH, la BossBar y los efectos de la zona.
+ * Toda la lógica se ejecuta desde el hilo principal del servidor.
  */
 public final class KothManager {
+    private static final String BOSSBAR_TITLE = "§6Tiempo de captura restante: §e";
+
     private final SimpleKothNK plugin;
     private final RegionManager regions;
     private final Map<UUID, DummyBossBar> bossBars = new HashMap<>();
 
     private boolean running;
-    private UUID capturer;
-    private int capturedSeconds;
     private int captureTime;
-    private boolean contested;
+    private int remainingSeconds;
 
     public KothManager(SimpleKothNK plugin, RegionManager regions) {
         this.plugin = plugin;
         this.regions = regions;
         this.captureTime = Math.max(1, plugin.getConfig().getInt("capture-time-seconds", 180));
+        this.remainingSeconds = captureTime;
     }
 
     public void start() {
         if (running || !regions.isComplete()) return;
 
         running = true;
-        capturer = null;
-        capturedSeconds = 0;
-        contested = false;
+        captureTime = Math.max(1, plugin.getConfig().getInt("capture-time-seconds", 180));
+        remainingSeconds = captureTime;
 
         broadcast(message("messages.start", "§6¡El KOTH ha comenzado!"));
         updateBossBars();
@@ -48,9 +54,7 @@ public final class KothManager {
         if (!running) return;
 
         running = false;
-        capturer = null;
-        capturedSeconds = 0;
-        contested = false;
+        remainingSeconds = captureTime;
         removeAllBossBars();
 
         if (announce) {
@@ -58,7 +62,7 @@ public final class KothManager {
         }
     }
 
-    /** Se ejecuta una vez por segundo desde el scheduler principal. */
+    /** Se ejecuta una vez por segundo: el tiempo avanza aunque la zona esté vacía o disputada. */
     public void tick() {
         if (!running) return;
 
@@ -69,53 +73,28 @@ public final class KothManager {
         }
 
         List<Player> inside = getPlayersInside(region);
-        Player current = findCapturer();
 
-        // Si el capturador abandona la región, pierde todo el progreso.
-        if (current != null && !inside.contains(current)) {
-            capturer = null;
-            capturedSeconds = 0;
-            current = null;
-        }
+        // Los efectos siempre se originan en la región, nunca sobre los jugadores.
+        spawnZoneParticles(region, inside.size() > 1);
 
-        if (inside.size() > 1) {
-            // La disputa pausa el contador; no se envían mensajes repetitivos al chat.
-            contested = true;
-            spawnContestedParticles(inside);
-            updateBossBars();
-            return;
-        }
-
-        contested = false;
-        if (inside.isEmpty()) {
-            capturer = null;
-            capturedSeconds = 0;
-            updateBossBars();
-            return;
-        }
-
-        Player onlyPlayer = inside.get(0);
-        if (current == null || !current.getUniqueId().equals(onlyPlayer.getUniqueId())) {
-            // Un nuevo jugador comienza siempre desde cero.
-            capturer = onlyPlayer.getUniqueId();
-            capturedSeconds = 0;
-        }
-
-        capturedSeconds++;
-        spawnCaptureParticles(region);
-
-        if (capturedSeconds >= captureTime) {
-            win(onlyPlayer);
-            return;
+        if (remainingSeconds > 0) {
+            remainingSeconds--;
         }
 
         updateBossBars();
+
+        // Si el tiempo llega a cero sin participantes, se queda en cero.
+        // El primer jugador (o uno elegido al azar si hay varios) que esté dentro gana.
+        if (remainingSeconds <= 0 && !inside.isEmpty()) {
+            Player winner = inside.get(ThreadLocalRandom.current().nextInt(inside.size()));
+            win(winner, region);
+        }
     }
 
     private List<Player> getPlayersInside(Region region) {
         List<Player> inside = new ArrayList<>();
         for (Player player : Server.getInstance().getOnlinePlayers().values()) {
-            if (player.isOnline() && player.isAlive()
+            if (player.isOnline() && player.isAlive() && player.getLevel() != null
                     && region.contains(player.getLevel().getName(),
                     player.getFloorX(), player.getFloorY(), player.getFloorZ())) {
                 inside.add(player);
@@ -124,17 +103,18 @@ public final class KothManager {
         return inside;
     }
 
-    private Player findCapturer() {
-        if (capturer == null) return null;
-        return Server.getInstance().getPlayer(capturer)
-                .filter(Player::isOnline)
-                .orElse(null);
-    }
-
-    private void win(Player winner) {
+    private void win(Player winner, Region region) {
         String winnerName = winner.getName();
+
+        // Se detiene primero para evitar que el evento pueda premiar dos veces.
+        running = false;
+        remainingSeconds = 0;
+        removeAllBossBars();
+
         broadcast(message("messages.winner", "§a¡{player} ha conquistado el KOTH!")
                 .replace("{player}", winnerName));
+
+        playVictoryEffects(region);
 
         for (String command : plugin.getConfig().getStringList("winner-commands")) {
             if (command == null || command.isBlank()) continue;
@@ -142,32 +122,13 @@ public final class KothManager {
             Server.getInstance().dispatchCommand(Server.getInstance().getConsoleSender(),
                     parsed.startsWith("/") ? parsed.substring(1) : parsed);
         }
-
-        stop(false);
     }
 
-    /**
-     * Mantiene una única DummyBossBar por jugador. La entidad invisible que
-     * sostiene la barra debe seguir la posición del jugador; si no se actualiza,
-     * el cliente puede dejar de mostrarla al alejarse de su posición inicial.
-     */
+    /** Crea y mantiene una BossBar para todos los jugadores conectados. */
     private void updateBossBars() {
-        Region region = regions.getRegion();
-        List<Player> inside = region == null ? Collections.emptyList() : getPlayersInside(region);
-        Player current = findCapturer();
-
-        String title;
-        if (inside.size() > 1 || contested) {
-            title = "§cKOTH disputado §7| §e" + formatTime(getRemainingSeconds());
-        } else if (current != null) {
-            title = "§6KOTH §7| §e" + current.getName()
-                    + " §7| §f" + formatTime(getRemainingSeconds());
-        } else {
-            title = "§6KOTH §7| §fEsperando jugador §7| §e" + formatTime(getRemainingSeconds());
-        }
-
+        String title = BOSSBAR_TITLE + formatTime(remainingSeconds);
         float percentage = Math.max(0, Math.min(100,
-                (float) capturedSeconds / captureTime * 100));
+                (float) remainingSeconds / Math.max(1, captureTime) * 100));
 
         for (Player player : Server.getInstance().getOnlinePlayers().values()) {
             if (!player.isOnline()) continue;
@@ -185,13 +146,19 @@ public final class KothManager {
                 bar.setLength(percentage);
             }
 
-            // Se actualiza también durante espera y disputa para que no desaparezca.
+            // La entidad invisible de la BossBar debe mantenerse junto al jugador.
             bar.updateBossEntityPosition();
         }
     }
 
-    /** Brillos verdes alrededor del perímetro mientras un jugador captura. */
-    private void spawnCaptureParticles(Region region) {
+    /**
+     * Partículas distribuidas por el perímetro y el interior de la zona.
+     * La disputa usa partículas de enfado en puntos de la región, no en los jugadores.
+     */
+    private void spawnZoneParticles(Region region, boolean contested) {
+        Level level = regionLevel(region);
+        if (level == null) return;
+
         double y = region.getMaxY() + 1.15;
         double minX = region.getMinX() + 0.5;
         double maxX = region.getMaxX() + 0.5;
@@ -200,32 +167,49 @@ public final class KothManager {
         double midX = (minX + maxX) / 2.0;
         double midZ = (minZ + maxZ) / 2.0;
 
-        addHappyParticle(region, minX, y, minZ);
-        addHappyParticle(region, minX, y, maxZ);
-        addHappyParticle(region, maxX, y, minZ);
-        addHappyParticle(region, maxX, y, maxZ);
-        addHappyParticle(region, midX, y, minZ);
-        addHappyParticle(region, midX, y, maxZ);
-        addHappyParticle(region, minX, y, midZ);
-        addHappyParticle(region, maxX, y, midZ);
-    }
+        Vector3[] points = {
+                new Vector3(minX, y, minZ), new Vector3(minX, y, maxZ),
+                new Vector3(maxX, y, minZ), new Vector3(maxX, y, maxZ),
+                new Vector3(midX, y, minZ), new Vector3(midX, y, maxZ),
+                new Vector3(minX, y, midZ), new Vector3(maxX, y, midZ),
+                new Vector3(midX, y, midZ)
+        };
 
-    private void addHappyParticle(Region region, double x, double y, double z) {
-        cn.nukkit.level.Level level = regionLevel(region);
-        if (level != null) {
-            level.addParticle(new HappyVillagerParticle(new Vector3(x, y, z)));
+        for (Vector3 point : points) {
+            if (contested) {
+                level.addParticle(new AngryVillagerParticle(point));
+            } else {
+                level.addParticle(new HappyVillagerParticle(point));
+            }
         }
     }
 
-    /** Partículas de enfado sobre cada jugador cuando la zona está disputada. */
-    private void spawnContestedParticles(List<Player> players) {
-        for (Player player : players) {
-            Vector3 position = new Vector3(player.getX(), player.getY() + 2.15, player.getZ());
-            player.getLevel().addParticle(new AngryVillagerParticle(position), player);
+    /** Efectos de fuegos artificiales y sonido reproducidos desde la zona de victoria. */
+    private void playVictoryEffects(Region region) {
+        Level level = regionLevel(region);
+        if (level == null) return;
+
+        double centerX = (region.getMinX() + region.getMaxX() + 1) / 2.0;
+        double centerZ = (region.getMinZ() + region.getMaxZ() + 1) / 2.0;
+        double baseY = region.getMaxY() + 2.0;
+
+        // Varias explosiones visuales a diferentes alturas para simular una salva.
+        for (int i = 0; i < 5; i++) {
+            double x = centerX + (i - 2) * 1.8;
+            double z = centerZ + ((i % 2 == 0) ? 1.2 : -1.2);
+            Vector3 burst = new Vector3(x, baseY + (i % 3) * 2.0, z);
+
+            level.addParticle(new HugeExplodeSeedParticle(burst));
+            level.addParticle(new ExplodeParticle(burst));
+            level.addParticle(new FlameParticle(burst));
+            level.addSound(burst, Sound.FIREWORK_BLAST, 1.8f, 1.0f);
+            level.addSound(burst, Sound.FIREWORK_TWINKLE, 1.4f, 1.2f);
         }
+
+        level.addSound(new Vector3(centerX, baseY, centerZ), Sound.RANDOM_LEVELUP, 1.5f, 1.0f);
     }
 
-    private cn.nukkit.level.Level regionLevel(Region region) {
+    private Level regionLevel(Region region) {
         return Server.getInstance().getLevelByName(region.getWorld());
     }
 
@@ -236,11 +220,7 @@ public final class KothManager {
     public void onQuit(Player player) {
         DummyBossBar bar = bossBars.remove(player.getUniqueId());
         if (bar != null) player.removeBossBar(bar.getBossBarId());
-
-        if (capturer != null && capturer.equals(player.getUniqueId())) {
-            capturer = null;
-            capturedSeconds = 0;
-        }
+        // Salir o desconectarse no pausa ni reinicia el temporizador global.
     }
 
     public void shutdown() {
@@ -268,26 +248,37 @@ public final class KothManager {
         return plugin.getConfig().getString(path, fallback);
     }
 
-    public boolean isRunning() { return running; }
-    public int getRemainingSeconds() {
-        return running ? Math.max(0, captureTime - capturedSeconds) : 0;
+    public boolean isRunning() {
+        return running;
     }
-    public String getRemainingFormatted() { return formatTime(getRemainingSeconds()); }
+
+    public int getRemainingSeconds() {
+        return running ? Math.max(0, remainingSeconds) : 0;
+    }
+
+    public String getRemainingFormatted() {
+        return formatTime(getRemainingSeconds());
+    }
+
     public String getStatus() {
-        return !running ? "stopped" : contested ? "contested"
-                : capturer == null ? "waiting" : "capturing";
+        if (!running) return "stopped";
+        Region region = regions.getRegion();
+        if (region == null) return "waiting";
+        int participants = getPlayersInside(region).size();
+        return participants > 1 ? "contested" : participants == 1 ? "capturing" : "waiting";
     }
 
     public void reloadSettings() {
         captureTime = Math.max(1, plugin.getConfig().getInt("capture-time-seconds", 180));
-        capturedSeconds = 0;
-        capturer = null;
-        contested = false;
+        remainingSeconds = captureTime;
     }
 
+    /** Conserva el placeholder anterior: devuelve el único jugador dentro, si lo hay. */
     public String getCapturerName() {
-        Player player = findCapturer();
-        return player == null ? "" : player.getName();
+        Region region = regions.getRegion();
+        if (!running || region == null) return "";
+        List<Player> inside = getPlayersInside(region);
+        return inside.size() == 1 ? inside.get(0).getName() : "";
     }
 
     private static String formatTime(int seconds) {
