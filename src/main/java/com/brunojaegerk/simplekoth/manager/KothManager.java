@@ -163,12 +163,12 @@ public final class KothManager {
 
     /** Se ejecuta una vez por segundo: el tiempo avanza aunque la zona esté vacía o disputada. */
     public void tick() {
-        tickAutoSchedule();
         if (countdownActive) {
             tickCountdown();
             return;
         }
-        if (!running) return;
+        tickAutoSchedule();
+        if (countdownActive || !running) return;
 
         Region region = regions.getRegion();
         if (region == null) {
