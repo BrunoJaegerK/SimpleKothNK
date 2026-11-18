@@ -3,7 +3,8 @@ capture-time-seconds: 180
 
 # Mundo donde se encuentra la región. Se configura automáticamente con /koth set.
 region:
-  world: ""
+  pos1-world: ""
+  pos2-world: ""
   pos1:
     x: 0
     y: 0
