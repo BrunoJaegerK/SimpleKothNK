@@ -1,4 +1,4 @@
-# Tiempo que un jugador debe controlar la zona sin interrupciones (segundos).
+# Duración total del evento KOTH en segundos. El temporizador es global y no se pausa.
 capture-time-seconds: 180
 
 # Mundo donde se encuentra la región. Se configura automáticamente con /koth set.
