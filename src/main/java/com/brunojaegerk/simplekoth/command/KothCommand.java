@@ -28,12 +28,12 @@ public final class KothCommand extends Command {
             return true;
         }
         if (args.length == 0) {
-            sender.sendMessage("§e/koth set pos1 §7- Selecciona la primera esquina.");
-            sender.sendMessage("§e/koth set pos2 §7- Selecciona la segunda esquina.");
-            sender.sendMessage("§e/koth start §7- Programa el inicio del evento.");
-            sender.sendMessage("§e/koth stop §7- Detiene el evento.");
-            sender.sendMessage("§e/koth status §7- Muestra el estado.");
-            sender.sendMessage("§e/koth reload §7- Recarga la configuración.");
+            sender.sendMessage(plugin.getLang().getString("help.pos1", "§e/koth set pos1 §7- Selecciona la primera esquina."));
+            sender.sendMessage(plugin.getLang().getString("help.pos2", "§e/koth set pos2 §7- Selecciona la segunda esquina."));
+            sender.sendMessage(plugin.getLang().getString("help.start", "§e/koth start §7- Programa el inicio del evento."));
+            sender.sendMessage(plugin.getLang().getString("help.stop", "§e/koth stop §7- Detiene el evento."));
+            sender.sendMessage(plugin.getLang().getString("help.status", "§e/koth status §7- Muestra el estado."));
+            sender.sendMessage(plugin.getLang().getString("help.reload", "§e/koth reload §7- Recarga la configuración."));
             return true;
         }
 
@@ -80,14 +80,20 @@ public final class KothCommand extends Command {
                 return true;
             }
             case "status" -> {
-                String state = koth.isRunning() ? "§aActivo"
-                        : koth.isStarting() ? "§eIniciando en " + koth.getCountdownRemaining() + "s"
-                        : "§cInactivo";
+                String state = koth.isRunning()
+                        ? plugin.getLang().getString("status.running", "§aActivo")
+                        : koth.isStarting()
+                        ? plugin.getLang().getString("status.starting", "§eIniciando en {seconds}s")
+                                .replace("{seconds}", String.valueOf(koth.getCountdownRemaining()))
+                        : plugin.getLang().getString("status.stopped", "§cInactivo");
                 sender.sendMessage(plugin.getLang().getString("command.status", "§eKOTH: ") + state);
                 if (koth.isRunning()) {
                     sender.sendMessage(plugin.getLang().getString("command.remaining", "§eTiempo restante: §f") + koth.getRemainingFormatted());
                 }
-                sender.sendMessage("§eCapturador: §f" + (koth.getCapturerName().isEmpty() ? "Ninguno" : koth.getCapturerName()));
+                sender.sendMessage(plugin.getLang().getString("command.capturer", "§eCapturador: §f")
+                        + (koth.getCapturerName().isEmpty()
+                        ? plugin.getLang().getString("status.none", "Ninguno")
+                        : koth.getCapturerName()));
                 return true;
             }
             case "reload" -> {
