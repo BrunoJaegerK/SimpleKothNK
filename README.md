@@ -1,5 +1,16 @@
 # SimpleKothNK
 
+<p align="center">
+  <img src="https://img.shields.io/badge/Minecraft-Bedrock%20Edition-43A047?style=for-the-badge&logo=minecraft&logoColor=white" alt="Minecraft Bedrock Edition">
+  <img src="https://img.shields.io/badge/Server-NukkitPetteriM1Edition-2196F3?style=for-the-badge" alt="NukkitPetteriM1Edition">
+  <img src="https://img.shields.io/badge/Java-17-orange?style=for-the-badge&logo=openjdk&logoColor=white" alt="Java 17">
+  <img src="https://img.shields.io/badge/Build-Maven-C71A36?style=for-the-badge&logo=apachemaven&logoColor=white" alt="Maven">
+</p>
+
+<p align="center"><b>Plugin KOTH individual y ligero para NukkitPetteriM1Edition, con regiones configurables, captura disputada, BossBar y recompensas por comandos.</b></p>
+
+---
+
 Plugin KOTH individual, ligero y configurable para **NukkitPetteriM1Edition (PM1E)**.
 
 - Autor: **BrunoJaegerK**
@@ -80,3 +91,17 @@ El JAR se genera en `target/SimpleKothNK-1.0.0-SNAPSHOT.jar`.
 ## Compatibilidad
 
 El proyecto usa la API pública de Nukkit publicada en OpenCollab para compilar en CI y las llamadas específicas de BossBar verificadas en el código fuente de PM1E. La compatibilidad binaria exacta debe contrastarse con el JAR de la compilación PM1E que utilice el servidor de destino.
+
+## ℹ️ About
+
+Plugin KOTH individual y ligero para NukkitPetteriM1Edition, con regiones configurables, captura disputada, BossBar y recompensas por comandos.
+
+- **Autor:** BrunoJaegerK
+- **Servidor objetivo:** NukkitPetteriM1Edition (Minecraft Bedrock)
+- **Repositorio:** https://github.com/BrunoJaegerK/SimpleKothNK
+
+## 📜 Licencia
+
+Este proyecto se distribuye bajo **GPL-3.0**. Puedes utilizarlo, modificarlo y redistribuirlo respetando los términos de la licencia, conservando los avisos de copyright y atribución aplicables. En el caso de GPL-3.0, las versiones modificadas distribuidas deben permanecer bajo GPL-3.0 y proporcionar el código fuente correspondiente.
+
+Consulta el archivo [LICENSE](LICENSE) para leer el texto completo.
