@@ -1,0 +1,23 @@
+# Mensajes de SimpleKothNK. Puedes usar códigos de color de Minecraft (§).
+prefix: "§6[KOTH] §r"
+
+countdown:
+  announcement: "§e¡Un KOTH empezará en {seconds} segundos!"
+
+event:
+  started: "§a¡Empezó un KOTH! §eUsa /warp koth"
+  stopped: "§cEl KOTH ha terminado."
+  winner: "§a¡{player} ha conquistado el KOTH!"
+
+region:
+  pos1-set: "§aPosición 1 establecida."
+  pos2-set: "§aPosición 2 establecida."
+
+command:
+  no-permission: "§cNo tienes permiso."
+  no-region: "§cPrimero debes seleccionar la región con /koth set pos1 y /koth set pos2."
+  already-active: "§cEl KOTH ya está activo o tiene una cuenta regresiva."
+  countdown-queued: "§aCuenta regresiva del KOTH programada."
+  not-active: "§cNo hay evento ni cuenta regresiva activa."
+  stopped: "§aKOTH detenido."
+  reloaded: "§aConfiguración recargada."
