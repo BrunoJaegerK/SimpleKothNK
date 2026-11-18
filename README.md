@@ -11,7 +11,7 @@
 
 ---
 
-Plugin KOTH individual, ligero y configurable para **NukkitPetteriM1Edition (PM1E)**.
+Plugin KOTH ligero y configurable para **NukkitPetteriM1Edition (PM1E)**.
 
 - Autor: **BrunoJaegerK**
 - Java: **17**
@@ -21,11 +21,10 @@ Plugin KOTH individual, ligero y configurable para **NukkitPetteriM1Edition (PM1
 ## Características
 
 - Región cúbica definida por dos esquinas, incluso en un área pequeña de un mundo existente.
-- Evento individual: solo un jugador puede capturar.
-- Si hay dos o más jugadores dentro de la zona, la captura queda disputada y el contador se pausa; aparecen partículas de enfado sobre los participantes.
-- Si el capturador sale de la región, su progreso se reinicia.
+- Temporizador global: avanza aunque la región esté vacía o disputada.
+- Si hay dos o más jugadores dentro de la zona cuando el tiempo llega a cero, se elige un ganador aleatoriamente entre ellos.
 - BossBar nativa de PM1E persistente, con tiempo restante y progreso; sigue la posición del jugador para evitar que desaparezca.
-- Partículas verdes de brillo alrededor de la zona durante la captura.
+- Partículas de brillo alrededor de la región cuando no está disputada y partículas de enfado cuando hay varios jugadores dentro.
 - Cuenta regresiva configurable antes de iniciar, con anuncios en los segundos elegidos.
 - Inicio automático periódico configurable (por defecto cada 24 horas), con próxima fecha persistida tras reinicios.
 - Mensajes independientes y editables en `lang.yml`.
@@ -68,12 +67,12 @@ La región exige que ambas posiciones estén en el mismo mundo. No se modifica n
 ## Reglas de captura
 
 1. Al ejecutar `/koth start`, comienza una cuenta regresiva de al menos 30 segundos. Al terminar, se anuncia el inicio y comienza el evento.
-2. Con el evento activo, un jugador solo dentro de la región empieza a capturar.
-3. Si entra otro jugador, el contador se pausa mientras haya más de una persona en la región.
-4. Mientras haya disputa se muestran partículas de enfado; no se envían mensajes de captura o disputa al chat.
-5. Cuando vuelve a quedar un solo jugador, el capturador que siga dentro continúa con su progreso.
-6. Si el capturador sale o se desconecta, su progreso se reinicia. Si queda otro jugador solo dentro, empieza desde cero.
-7. Al completar el tiempo, se anuncia el ganador y se ejecutan los comandos configurados.
+2. El temporizador global avanza sin pausas, incluso si no hay jugadores dentro o la región está disputada.
+3. La BossBar se muestra a todos los jugadores conectados y refleja el estado de la región.
+4. Si hay varios jugadores dentro cuando el tiempo llega a cero, el ganador se elige aleatoriamente entre los jugadores vivos que estén dentro.
+5. Si el tiempo llega a cero con la región vacía, permanece en cero y gana el primer jugador (o uno aleatorio entre varios) que entre.
+6. Mientras haya disputa se muestran partículas de enfado; no se envían mensajes de captura o disputa al chat.
+7. Al ganar, se anuncia al jugador y se ejecutan los comandos configurados.
 
 El inicio automático está activado por defecto y programa el primer evento 24 horas después de la primera carga. La fecha del siguiente ciclo se conserva en `config.yml`; reiniciar el servidor no vuelve a contar las 24 horas desde cero.
 
@@ -108,7 +107,7 @@ El proyecto usa la API pública de Nukkit publicada en OpenCollab para compilar 
 
 ## ℹ️ About
 
-Plugin KOTH individual y ligero para NukkitPetteriM1Edition, con regiones configurables, captura disputada, BossBar y recompensas por comandos.
+Plugin KOTH ligero para NukkitPetteriM1Edition, con regiones configurables, captura disputada, BossBar y recompensas por comandos.
 
 - **Autor:** BrunoJaegerK
 - **Servidor objetivo:** NukkitPetteriM1Edition (Minecraft Bedrock)
