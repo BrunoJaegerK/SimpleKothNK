@@ -25,6 +25,7 @@ command:
   unknown: "§cSubcomando desconocido. Usa /koth."
   status: "§eKOTH: "
   remaining: "§eTiempo restante: §f"
+  capturer: "§eCapturador: §f"
 
 bossbar:
   waiting: "§eEsperando jugador"
@@ -46,5 +47,3 @@ status:
   stopped: "§cInactivo"
   none: "Ninguno"
 
-command:
-  capturer: "§eCapturador: §f"
