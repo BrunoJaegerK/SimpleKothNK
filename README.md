@@ -26,6 +26,9 @@ Plugin KOTH individual, ligero y configurable para **NukkitPetteriM1Edition (PM1
 - Si el capturador sale de la región, su progreso se reinicia.
 - BossBar nativa de PM1E persistente, con tiempo restante y progreso; sigue la posición del jugador para evitar que desaparezca.
 - Partículas verdes de brillo alrededor de la zona durante la captura.
+- Cuenta regresiva configurable antes de iniciar, con anuncios en los segundos elegidos.
+- Inicio automático periódico configurable (por defecto cada 24 horas), con próxima fecha persistida tras reinicios.
+- Mensajes independientes y editables en `lang.yml`.
 - Anuncio de inicio y victoria en el chat.
 - Comandos configurables al ganar.
 - Placeholders de PlaceholderAPI-nukkit.
@@ -38,7 +41,7 @@ Plugin KOTH individual, ligero y configurable para **NukkitPetteriM1Edition (PM1
 | `/koth` | Muestra la ayuda |
 | `/koth set pos1` | Guarda la primera esquina en la posición actual |
 | `/koth set pos2` | Guarda la segunda esquina en la posición actual |
-| `/koth start` | Inicia el KOTH |
+| `/koth start` | Programa el inicio con cuenta regresiva |
 | `/koth stop` | Detiene el KOTH |
 | `/koth status` | Muestra estado, tiempo y capturador |
 | `/koth reload` | Recarga la configuración |
@@ -50,20 +53,29 @@ Permiso: `simplekoth.admin` (por defecto OP).
 En `plugins/SimpleKothNK/config.yml`:
 
 - `capture-time-seconds`: segundos que se necesitan para ganar.
+- `countdown.seconds`: duración de la cuenta regresiva; se fuerza un mínimo de 30 segundos.
+- `countdown.announcements`: segundos restantes en los que se anuncia la cuenta regresiva (por defecto 30 y 20).
+- `auto-start.enabled`: activa o desactiva los inicios automáticos.
+- `auto-start.interval-seconds`: intervalo entre inicios automáticos. Usa `86400` para 24 horas o `259200` para 3 días.
+- `auto-start.next-start-at`: fecha interna persistida automáticamente; no modificar manualmente.
 - `winner-commands`: comandos ejecutados desde consola. Usa `{player}`.
-- `messages`: mensajes configurables.
 - `region`: se guarda automáticamente al usar `/koth set pos1` y `/koth set pos2`.
+
+Los mensajes están en `plugins/SimpleKothNK/lang.yml`; puedes personalizar prefijo, cuenta regresiva, inicio, victoria y respuestas de comandos.
 
 La región exige que ambas posiciones estén en el mismo mundo. No se modifica ningún bloque ni se protege el resto del mundo.
 
 ## Reglas de captura
 
-1. Con el evento activo, un jugador solo dentro de la región empieza a capturar.
-2. Si entra otro jugador, el contador se pausa mientras haya más de una persona en la región.
-3. Mientras haya disputa se muestran partículas de enfado; no se envían mensajes de captura o disputa al chat.
-4. Cuando vuelve a quedar un solo jugador, el capturador que siga dentro continúa con su progreso.
-5. Si el capturador sale o se desconecta, su progreso se reinicia. Si queda otro jugador solo dentro, empieza desde cero.
-6. Al completar el tiempo, se anuncia el ganador y se ejecutan los comandos configurados.
+1. Al ejecutar `/koth start`, comienza una cuenta regresiva de al menos 30 segundos. Al terminar, se anuncia el inicio y comienza el evento.
+2. Con el evento activo, un jugador solo dentro de la región empieza a capturar.
+3. Si entra otro jugador, el contador se pausa mientras haya más de una persona en la región.
+4. Mientras haya disputa se muestran partículas de enfado; no se envían mensajes de captura o disputa al chat.
+5. Cuando vuelve a quedar un solo jugador, el capturador que siga dentro continúa con su progreso.
+6. Si el capturador sale o se desconecta, su progreso se reinicia. Si queda otro jugador solo dentro, empieza desde cero.
+7. Al completar el tiempo, se anuncia el ganador y se ejecutan los comandos configurados.
+
+El inicio automático está activado por defecto y programa el primer evento 24 horas después de la primera carga. La fecha del siguiente ciclo se conserva en `config.yml`; reiniciar el servidor no vuelve a contar las 24 horas desde cero.
 
 Jugadores muertos no cuentan como participantes dentro de la zona.
 
