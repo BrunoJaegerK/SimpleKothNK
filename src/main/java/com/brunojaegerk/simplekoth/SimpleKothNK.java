@@ -2,11 +2,14 @@ package com.brunojaegerk.simplekoth;
 
 import cn.nukkit.plugin.PluginBase;
 import cn.nukkit.scheduler.PluginTask;
+import cn.nukkit.utils.Config;
 import com.brunojaegerk.simplekoth.command.KothCommand;
 import com.brunojaegerk.simplekoth.listener.PlayerConnectionListener;
 import com.brunojaegerk.simplekoth.integration.PlaceholderIntegration;
 import com.brunojaegerk.simplekoth.manager.KothManager;
 import com.brunojaegerk.simplekoth.manager.RegionManager;
+
+import java.io.File;
 
 /**
  * Punto de entrada del plugin. La lógica del evento, la región y los comandos
@@ -16,14 +19,16 @@ public final class SimpleKothNK extends PluginBase {
 
     private RegionManager regionManager;
     private KothManager kothManager;
+    private Config lang;
 
     @Override
     public void onEnable() {
         saveDefaultConfig();
+        saveResource("lang.yml", false);
+        this.lang = new Config(new File(getDataFolder(), "lang.yml"), Config.YAML);
 
         this.regionManager = new RegionManager(this);
         this.kothManager = new KothManager(this, regionManager);
-        // PlaceholderAPI-nukkit es opcional; evita cargar sus clases si no está instalado.
         if (getServer().getPluginManager().getPlugin("PlaceholderAPI") != null) {
             PlaceholderIntegration.register(this, kothManager);
         } else {
@@ -35,7 +40,7 @@ public final class SimpleKothNK extends PluginBase {
         );
         getServer().getCommandMap().register("koth", new KothCommand(this, regionManager, kothManager));
 
-        // Toda la lógica del evento corre en el hilo principal, una vez por segundo.
+        // Cuenta regresiva y evento automático se procesan en el hilo principal.
         getServer().getScheduler().scheduleRepeatingTask(this, new PluginTask<SimpleKothNK>(this) {
             @Override
             public void onRun(int currentTick) {
@@ -43,6 +48,7 @@ public final class SimpleKothNK extends PluginBase {
             }
         }, 20);
 
+        kothManager.initializeAutoSchedule();
         getLogger().info("SimpleKothNK habilitado.");
     }
 
@@ -59,5 +65,9 @@ public final class SimpleKothNK extends PluginBase {
 
     public KothManager getKothManager() {
         return kothManager;
+    }
+
+    public Config getLang() {
+        return lang;
     }
 }
