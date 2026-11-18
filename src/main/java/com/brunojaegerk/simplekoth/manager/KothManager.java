@@ -169,9 +169,6 @@ public final class KothManager {
 
             bar.updateBossEntityPosition();
         }
-
-        // Limpia referencias de jugadores que ya no están conectados.
-        bossBars.keySet().removeIf(uuid -> Server.getInstance().getPlayer(uuid) == null);
     }
 
     /**
