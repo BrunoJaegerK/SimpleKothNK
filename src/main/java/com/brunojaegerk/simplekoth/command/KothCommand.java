@@ -50,7 +50,7 @@ public final class KothCommand extends Command {
                     return true;
                 }
                 regions.setPosition(player, position);
-                sender.sendMessage(plugin.getConfig().getString(
+                sender.sendMessage(plugin.getLang().getString(
                         position == 1 ? "region.pos1-set" : "region.pos2-set",
                         "§aPosición establecida."));
                 return true;
