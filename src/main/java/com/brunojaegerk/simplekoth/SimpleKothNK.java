@@ -23,7 +23,12 @@ public final class SimpleKothNK extends PluginBase {
 
         this.regionManager = new RegionManager(this);
         this.kothManager = new KothManager(this, regionManager);
-        PlaceholderIntegration.register(this, kothManager);
+        // PlaceholderAPI-nukkit es opcional; evita cargar sus clases si no está instalado.
+        if (getServer().getPluginManager().getPlugin("PlaceholderAPI") != null) {
+            PlaceholderIntegration.register(this, kothManager);
+        } else {
+            getLogger().info("PlaceholderAPI no está instalado; integración omitida.");
+        }
 
         getServer().getPluginManager().registerEvents(
                 new PlayerConnectionListener(kothManager), this
